@@ -55,19 +55,6 @@ public class MovieController {
         return "index";
     }
 
-    @GetMapping("/movies/add")
-    public String showAddMovieForm(Model model, Principal principal) {
-        model.addAttribute("movie", new Movie());
-        model.addAttribute("user", principal);
-        return "add-movie";
-    }
-
-    @PostMapping("/movies/add")
-    public String addMovie(@ModelAttribute Movie movie) {
-        movieService.addMovie(movie);
-        return "redirect:/";
-    }
-
     @GetMapping("/movies/details/{id}")
     public String movieDetails(@PathVariable Long id, Model model, Principal principal) {
         // 1. Szukamy filmu w naszej lokalnej bazie MySQL
