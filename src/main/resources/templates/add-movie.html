@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dodaj nowy film - Kinoman</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <style>
+        :root {
+            --fw-yellow: #f5c518;
+            --fw-dark: #121212;
+            --fw-gray: #242424;
+        }
+        body { font-family: 'Montserrat', sans-serif; background-color: #f8f9fa; }
+
+        /* Navbar */
+        .navbar { background-color: var(--fw-dark); padding: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .navbar-brand { color: var(--fw-yellow) !important; font-weight: 800; font-size: 1.8rem; letter-spacing: 1px; }
+        .nav-link { color: #fff !important; font-weight: 500; transition: color 0.2s; }
+        .nav-link:hover { color: var(--fw-yellow) !important; }
+
+        /* Przyciski i Karta */
+        .btn-yellow { background-color: var(--fw-yellow); color: var(--fw-dark); font-weight: 700; border: none; }
+        .btn-yellow:hover { background-color: #e5b610; }
+        .form-card { border-top: 5px solid var(--fw-yellow); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top mb-5">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fa-solid fa-film me-2"></i>KINOMAN</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-4">
+                <li class="nav-item"><a class="nav-link" href="/">Baza filmów</a></li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <div th:if="${user == null}">
+                    <a href="/login" class="nav-link d-inline me-3">Zaloguj się</a>
+                    <a href="/register" class="btn btn-yellow"><i class="fa-solid fa-user me-2"></i>Dołącz do nas</a>
+                </div>
+                <div th:if="${user != null}" class="d-flex align-items-center">
+                    <span class="text-white me-3">
+                        Witaj, <strong style="color: var(--fw-yellow);" th:text="${user.name}">User</strong>!
+                    </span>
+                    <a th:href="@{/user/{username}(username=${user.name})}" class="btn btn-outline-info btn-sm me-3">
+                        <i class="fa-solid fa-circle-user me-1"></i>Mój Profil
+                    </a>
+                    <form th:action="@{/logout}" method="post" class="m-0">
+                        <button type="submit" class="btn btn-outline-light btn-sm">
+                            <i class="fa-solid fa-right-from-bracket me-1"></i>Wyloguj
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            <div class="card form-card">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fa-solid fa-video fa-3x text-muted mb-3"></i>
+                        <h2 class="fw-bold">Dodaj nowy film</h2>
+                        <p class="text-muted small">Wzbogać bazę Kinomana o nową produkcję</p>
+                    </div>
+
+                    <form th:action="@{/movies/add}" th:object="${movie}" method="post">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Tytuł filmu</label>
+                            <input type="text" th:field="*{title}" class="form-control form-control-lg" placeholder="np. Matrix" required />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label fw-bold small text-muted">Reżyser</label>
+                                <input type="text" th:field="*{director}" class="form-control form-control-lg" placeholder="np. Wachowscy" required />
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold small text-muted">Rok premiery</label>
+                                <input type="number" th:field="*{releaseYear}" class="form-control form-control-lg" placeholder="1999" required />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Gatunek</label>
+                            <input type="text" th:field="*{genre}" class="form-control form-control-lg" placeholder="np. Sci-Fi / Akcja" required/>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-muted">Zarys fabuły (Opis)</label>
+                            <textarea th:field="*{description}" class="form-control" rows="5" placeholder="Napisz kilka słów o czym jest ten film..." required></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-yellow btn-lg text-uppercase fw-bold">
+                                <i class="fa-solid fa-cloud-arrow-up me-2"></i>Zapisz w bazie
+                            </button>
+                            <a href="/" class="btn btn-light border fw-bold text-muted">Anuluj</a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

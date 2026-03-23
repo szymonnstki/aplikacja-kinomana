@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinoman - Odkrywaj i oceniaj filmy</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <style>
+        :root {
+            --fw-yellow: #f5c518;
+            --fw-dark: #121212;
+            --fw-gray: #242424;
+            --fw-text: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: var(--fw-dark);
+            padding: 1rem 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .navbar-brand {
+            color: var(--fw-yellow) !important;
+            font-weight: 800;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+        .nav-link {
+            color: #fff !important;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-link:hover { color: var(--fw-yellow) !important; }
+
+        .btn-yellow {
+            background-color: var(--fw-yellow);
+            color: var(--fw-dark);
+            font-weight: 700;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem 1.5rem;
+            transition: all 0.3s;
+        }
+        .btn-yellow:hover {
+            background-color: #e5b610;
+            transform: translateY(-2px);
+            color: var(--fw-dark);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, var(--fw-dark) 0%, var(--fw-gray) 100%);
+            color: white;
+            padding: 4rem 0;
+            margin-bottom: 3rem;
+            border-bottom: 5px solid var(--fw-yellow);
+        }
+
+        /* Karty Filmów */
+        .movie-card {
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        .movie-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .poster-placeholder {
+            height: 350px;
+            background-color: var(--fw-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--fw-yellow);
+            font-size: 3rem;
+            position: relative;
+        }
+
+        .rating-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--fw-yellow);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 202, 40, 0.3);
+        }
+
+        .card-body { padding: 1.5rem; }
+        .movie-title { font-weight: 700; font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--fw-dark); }
+        .movie-meta { color: #6c757d; font-size: 0.9rem; font-weight: 500; margin-bottom: 1rem; }
+
+        .footer {
+            background-color: var(--fw-dark);
+            color: var(--fw-text);
+            padding: 2rem 0;
+            margin-top: 5rem;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fa-solid fa-film me-2"></i>KINOMAN</a>
+        <button class="navbar-toggler bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-4">
+                <li class="nav-item"><a class="nav-link" href="/">Baza filmów</a></li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <a href="/movies/add" class="nav-link me-4"><i class="fa-solid fa-plus me-1"></i>Dodaj film</a>
+
+                <div th:if="${user == null}">
+                    <a href="/login" class="nav-link d-inline me-3">Zaloguj się</a>
+                    <a href="/register" class="btn btn-yellow"><i class="fa-solid fa-user me-2"></i>Dołącz do nas</a>
+                </div>
+
+                <div th:if="${user != null}" class="d-flex align-items-center">
+                    <span class="text-white me-3">
+                        Witaj, <strong style="color: var(--fw-yellow);" th:text="${user.name}">User</strong>!
+                    </span>
+                    <a th:href="@{/user/{username}(username=${user.name})}" class="btn btn-outline-info btn-sm me-3">
+                        <i class="fa-solid fa-circle-user me-1"></i>Mój Profil
+                    </a>
+                    <form th:action="@{/logout}" method="post" class="m-0">
+                        <button type="submit" class="btn btn-outline-light btn-sm">
+                            <i class="fa-solid fa-right-from-bracket me-1"></i>Wyloguj
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-3">Witaj w świecie kina</h1>
+        <p class="lead mb-4" style="color: #bbb;">Odkrywaj, oceniaj i dziel się opiniami o najlepszych produkcjach ze znajomymi.</p>
+    </div>
+</div>
+<div class="container" style="margin-top: -4.5rem; margin-bottom: 3rem; position: relative; z-index: 10;">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0" style="border-radius: 50px;">
+                <div class="card-body p-2">
+                    <form th:action="@{/}" method="get" class="d-flex m-0">
+                        <input type="text" name="search" th:value="${searchQuery}"
+                               class="form-control border-0 px-4 py-2"
+                               placeholder="Szukaj po tytule lub gatunku (np. Akcja)..."
+                               style="box-shadow: none; border-radius: 50px 0 0 50px; background-color: transparent;">
+
+                        <a th:if="${searchQuery != null && !searchQuery.isEmpty()}" href="/" class="btn btn-link text-muted d-flex align-items-center text-decoration-none">
+                            <i class="fa-solid fa-xmark"></i>
+                        </a>
+
+                        <button type="submit" class="btn btn-yellow px-4 fw-bold" style="border-radius: 50px;">
+                            <i class="fa-solid fa-magnifying-glass me-md-2"></i><span class="d-none d-md-inline">Szukaj</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold" style="border-left: 5px solid var(--fw-yellow); padding-left: 15px;">Najnowsze w bazie</h2>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        <div class="col" th:each="m : ${movies}">
+            <a th:href="@{/movies/details/{id}(id=${m.id})}" class="text-decoration-none">
+                <div class="card movie-card">
+                    <div class="card-img-top position-relative" style="height: 350px; overflow: hidden; background: #222;">
+                        <img th:if="${m.imageUrl != null}" th:src="${m.imageUrl}" class="w-100 h-100" style="object-fit: cover;">
+                        <div th:if="${m.imageUrl == null}" class="h-100 d-flex align-items-center justify-content-center text-warning">
+                            <i class="fa-solid fa-clapperboard fa-3x"></i>
+                        </div>
+
+                        <div class="rating-badge">
+                            <i class="fa-solid fa-star me-1"></i>
+                            <span th:text="${m.averageRating}">8,5</span>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="movie-title text-truncate" th:text="${m.title}">Tytuł Filmu</h5>
+                        <div class="movie-meta">
+                            <span th:text="${m.releaseYear}">2026</span> •
+                            <span th:text="${m.genre}">Gatunek</span>
+                        </div>
+                        <p class="card-text text-muted small" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" th:text="${m.description}">Opis</p>
+                        <div class="mt-auto pt-3 border-top text-muted small fw-bold">
+                            <i class="fa-solid fa-video me-2"></i><span th:text="${m.director}">Reżyser</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 text-center py-5" th:if="${#lists.isEmpty(movies)}">
+            <i class="fa-solid fa-box-open fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">Brak filmów w bazie</h4>
+            <p>Bądź pierwszy i <a href="/movies/add" style="color: var(--fw-yellow);">dodaj jakiś film</a>!</p>
+        </div>
+    </div>
+</div>
+
+<footer class="footer text-center">
+    <div class="container">
+        <h4 class="mb-3" style="color: var(--fw-yellow); font-weight: 800;">KINOMAN</h4>
+        <p class="small text-muted mb-0">&copy; 2026 Stworzone przez Artura, Szymona i Dawida. Wszystkie prawa zastrzeżone.</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

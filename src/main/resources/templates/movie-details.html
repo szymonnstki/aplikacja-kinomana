@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${movie.title} + ' - Kinoman'">Szczegóły filmu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root { --fw-yellow: #f5c518; --fw-dark: #121212; }
+        body { font-family: 'Montserrat', sans-serif; background-color: #f8f9fa; }
+        .navbar { background-color: var(--fw-dark); padding: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .navbar-brand { color: var(--fw-yellow) !important; font-weight: 800; font-size: 1.8rem; letter-spacing: 1px; }
+        .nav-link { color: #fff !important; font-weight: 500; transition: color 0.2s; }
+        .nav-link:hover { color: var(--fw-yellow) !important; }
+        .btn-yellow { background-color: var(--fw-yellow); color: var(--fw-dark); font-weight: 700; border: none; }
+        .btn-yellow:hover { background-color: #e5b610; transform: translateY(-2px); color: var(--fw-dark); }
+        .movie-header { background-color: #242424; color: white; padding: 4rem 0; border-bottom: 5px solid var(--fw-yellow); }
+        .star-color { color: var(--fw-yellow); }
+        .review-card { border-left: 4px solid var(--fw-yellow); background: white; margin-bottom: 1rem; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-radius: 0 8px 8px 0; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fa-solid fa-film me-2"></i>KINOMAN</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-4">
+                <li class="nav-item"><a class="nav-link" href="/">Baza filmów</a></li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <a href="/movies/add" class="nav-link me-4"><i class="fa-solid fa-plus me-1"></i>Dodaj film</a>
+                <div th:if="${user == null}">
+                    <a href="/login" class="nav-link d-inline me-3">Zaloguj się</a>
+                    <a href="/register" class="btn btn-yellow"><i class="fa-solid fa-user me-2"></i>Dołącz do nas</a>
+                </div>
+                <div th:if="${user != null}" class="d-flex align-items-center">
+                    <span class="text-white me-3">Witaj, <strong style="color: var(--fw-yellow);" th:text="${user.name}">User</strong>!</span>
+                    <a th:href="@{/user/{username}(username=${user.name})}" class="btn btn-outline-info btn-sm me-3">
+                        <i class="fa-solid fa-circle-user me-1"></i>Mój Profil
+                    </a>
+                    <form th:action="@{/logout}" method="post" class="m-0">
+                        <button type="submit" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>Wyloguj</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+<div class="movie-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <h1 class="display-4 fw-bold" th:text="${movie.title}">Tytuł Filmu</h1>
+                <p class="lead text-muted" th:text="${movie.director} + ' • ' + ${movie.releaseYear} + ' • ' + ${movie.genre}">Opis</p>
+                <p class="mt-4" th:text="${movie.description}">Opis filmu...</p>
+
+                <div th:if="${user != null}" class="mt-4 p-3 bg-dark rounded d-inline-block border border-secondary">
+                    <span class="fw-bold me-3">Twoja Watchlista:</span>
+
+                    <div th:if="${watchlistStatus == null}" class="d-inline-block">
+                        <form th:action="@{/watchlist/add}" method="post" class="d-inline">
+                            <input type="hidden" name="movieId" th:value="${movie.id}">
+                            <input type="hidden" name="status" value="TO_WATCH">
+                            <button type="submit" class="btn btn-outline-warning btn-sm me-2"><i class="fa-solid fa-eye me-1"></i>Chcę obejrzeć</button>
+                        </form>
+                        <form th:action="@{/watchlist/add}" method="post" class="d-inline">
+                            <input type="hidden" name="movieId" th:value="${movie.id}">
+                            <input type="hidden" name="status" value="WATCHED">
+                            <button type="submit" class="btn btn-outline-success btn-sm"><i class="fa-solid fa-check me-1"></i>Obejrzane</button>
+                        </form>
+                    </div>
+
+                    <div th:if="${watchlistStatus == 'TO_WATCH'}" class="d-inline-block">
+                        <span class="badge bg-warning text-dark me-2 fs-6"><i class="fa-solid fa-eye me-1"></i>Do obejrzenia</span>
+                        <form th:action="@{/watchlist/add}" method="post" class="d-inline">
+                            <input type="hidden" name="movieId" th:value="${movie.id}">
+                            <input type="hidden" name="status" value="WATCHED">
+                            <button type="submit" class="btn btn-outline-success btn-sm me-2"><i class="fa-solid fa-check me-1"></i>Oznacz jako obejrzane</button>
+                        </form>
+                        <form th:action="@{/watchlist/remove}" method="post" class="d-inline">
+                            <input type="hidden" name="movieId" th:value="${movie.id}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Usuń z listy"><i class="fa-solid fa-xmark"></i></button>
+                        </form>
+                    </div>
+
+                    <div th:if="${watchlistStatus == 'WATCHED'}" class="d-inline-block">
+                        <span class="badge bg-success me-2 fs-6"><i class="fa-solid fa-check-double me-1"></i>Obejrzane</span>
+                        <form th:action="@{/watchlist/remove}" method="post" class="d-inline">
+                            <input type="hidden" name="movieId" th:value="${movie.id}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Usuń z listy"><i class="fa-solid fa-xmark"></i></button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-md-5 text-center text-md-end mt-4 mt-md-0">
+                <p class="text-muted mb-1">Średnia ocen użytkowników</p>
+                <h1 class="display-3 fw-bold star-color"><i class="fa-solid fa-star me-2"></i><span th:text="${movie.averageRating}">8.5</span></h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white fw-bold text-center py-3">Wystaw swoją ocenę</div>
+                <div class="card-body p-4">
+                    <div th:if="${user == null}" class="text-center py-4">
+                        <i class="fa-solid fa-lock fa-3x text-muted mb-3"></i>
+                        <h5 class="fw-bold">Zaloguj się, aby ocenić</h5>
+                        <p class="text-muted small">Tylko zarejestrowani Kinomaniacy mogą dodawać recenzje.</p>
+                        <a href="/login" class="btn btn-warning w-100 mt-3 fw-bold">Przejdź do logowania</a>
+                    </div>
+                    <form th:if="${user != null}" th:action="@{/movies/details/{id}/rate(id=${movie.id})}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Twoja ocena (1-10)</label>
+                            <input type="number" name="stars" class="form-control form-control-lg" min="1" max="10" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Krótka recenzja</label>
+                            <textarea name="comment" class="form-control" rows="4" placeholder="Co sądzisz o tym filmie?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 py-3 fw-bold text-uppercase">Dodaj ocenę</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <h3 class="mb-4 fw-bold border-bottom pb-2">Recenzje Użytkowników</h3>
+            <div th:if="${#lists.isEmpty(ratings)}" class="alert alert-light border text-center py-5">
+                <i class="fa-regular fa-comments fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Ten film nie ma jeszcze żadnych recenzji.</h5>
+                <p class="mb-0">Bądź pierwszy!</p>
+            </div>
+            <div class="review-card" th:each="r : ${ratings}">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <strong class="text-dark fs-5">
+                        <i class="fa-solid fa-circle-user text-muted me-2"></i>
+                        <a th:href="@{/user/{username}(username=${r.user.username})}" class="text-decoration-none text-dark" th:text="${r.user.username}">User</a>
+                    </strong>
+                    <span class="badge bg-dark star-color fs-6 px-3 py-2"><i class="fa-solid fa-star me-1"></i><span th:text="${r.stars}">10</span> / 10</span>
+                </div>
+                <p class="mb-0 text-muted" th:text="${r.comment}">Komentarz</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

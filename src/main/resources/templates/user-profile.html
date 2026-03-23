@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="'Profil: ' + ${profileUser.username}">Profil Użytkownika</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    body { font-family: 'Montserrat', sans-serif; background-color: #f8f9fa; }
+    .navbar { background-color: #121212; padding: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .navbar-brand { color: #f5c518 !important; font-weight: 800; font-size: 1.8rem; }
+    .nav-link { color: white !important; font-weight: 500; transition: color 0.2s; }
+    .nav-link:hover { color: #f5c518 !important; }
+    .btn-yellow { background-color: #f5c518; color: #121212; font-weight: 700; border: none; }
+    .profile-header { background: linear-gradient(135deg, #242424 0%, #121212 100%); color: white; padding: 3rem 0; border-bottom: 5px solid #f5c518; }
+    .star-color { color: #f5c518; }
+    .rating-card { border-left: 4px solid #f5c518; transition: transform 0.2s; }
+    .rating-card:hover { transform: translateX(5px); }
+    .watchlist-card { border-left: 4px solid #0dcaf0; transition: transform 0.2s; }
+    .watchlist-card:hover { transform: translateX(5px); }
+    .watchlist-watched { border-left: 4px solid #198754; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top shadow">
+  <div class="container">
+    <a class="navbar-brand" href="/"><i class="fa-solid fa-film me-2"></i>KINOMAN</a>
+    <div class="d-flex align-items-center">
+      <a href="/" class="nav-link me-3"><i class="fa-solid fa-house me-1"></i>Główna</a>
+    </div>
+  </div>
+</nav>
+
+<div class="profile-header text-center">
+  <div class="container">
+    <i class="fa-solid fa-circle-user fa-5x mb-3 star-color"></i>
+    <h1 class="display-5 fw-bold" th:text="${profileUser.username}">Nazwa</h1>
+    <p class="text-muted mb-2">Kinomaniak od 2026</p>
+
+    <div th:if="${isOwner}" class="mt-3">
+      <span class="badge bg-warning text-dark fs-6 mb-2 d-inline-block"><i class="fa-solid fa-star me-1"></i>To jest Twój profil</span>
+      <br>
+      <a href="/user/settings" class="btn btn-outline-light btn-sm mt-2"><i class="fa-solid fa-gear me-1"></i>Ustawienia profilu</a>
+    </div>
+  </div>
+</div>
+
+<div class="container mt-5">
+  <div th:if="${isPrivate}" class="text-center py-5">
+    <i class="fa-solid fa-user-lock fa-4x text-muted mb-3"></i>
+    <h3 class="fw-bold">Profil prywatny</h3>
+    <p class="text-muted">Ten użytkownik zdecydował się ukryć swoją aktywność przed innymi.</p>
+  </div>
+
+  <div th:if="${!isPrivate}">
+
+    <ul class="nav nav-tabs fw-bold mb-4" id="profileTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active text-dark" id="watchlist-tab" data-bs-toggle="tab" data-bs-target="#watchlist" type="button" role="tab">Moja Watchlista</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link text-dark" id="ratings-tab" data-bs-toggle="tab" data-bs-target="#ratings" type="button" role="tab">Ocenione filmy</button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="profileTabsContent">
+
+      <div class="tab-pane fade show active" id="watchlist" role="tabpanel">
+        <div th:if="${#lists.isEmpty(watchlist)}" class="alert alert-secondary">
+          Brak filmów na watchliście.
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3" th:each="w : ${watchlist}">
+            <div class="card shadow-sm h-100" th:classappend="${w.status == 'WATCHED' ? 'watchlist-watched' : 'watchlist-card'}">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                  <h5 class="fw-bold mb-1">
+                    <a th:href="@{/movies/details/{id}(id=${w.movie.id})}" class="text-dark text-decoration-none" th:text="${w.movie.title}">Tytuł</a>
+                  </h5>
+                  <p class="text-muted small mb-0" th:text="${w.movie.releaseYear} + ' • ' + ${w.movie.genre}"></p>
+                </div>
+                <div>
+                  <span th:if="${w.status == 'TO_WATCH'}" class="badge bg-info text-dark fs-6"><i class="fa-solid fa-eye me-1"></i>Do obejrzenia</span>
+                  <span th:if="${w.status == 'WATCHED'}" class="badge bg-success fs-6"><i class="fa-solid fa-check-double me-1"></i>Obejrzane</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="ratings" role="tabpanel">
+        <div th:if="${#lists.isEmpty(userRatings)}" class="alert alert-secondary">
+          Brak ocenionych filmów na tym koncie.
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3" th:each="r : ${userRatings}">
+            <div class="card rating-card shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h5 class="fw-bold mb-0">
+                    <a th:href="@{/movies/details/{id}(id=${r.movie.id})}" class="text-dark text-decoration-none" th:text="${r.movie.title}">Tytuł</a>
+                  </h5>
+                  <span class="badge bg-dark star-color px-2 py-1"><i class="fa-solid fa-star me-1"></i><span th:text="${r.stars}">10</span>/10</span>
+                </div>
+                <p class="mb-0 font-italic" th:text="'&quot;' + ${r.comment} + '&quot;'">Komentarz</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

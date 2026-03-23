@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Rejestracja - Kinoman</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body { font-family: 'Montserrat', sans-serif; background-color: #f8f9fa; }
+        .navbar { background-color: #121212; }
+        .navbar-brand { color: #f5c518 !important; font-weight: 800; font-size: 1.5rem; }
+        .nav-link { color: white !important; }
+        .auth-card { border-top: 5px solid #f5c518; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .btn-yellow { background-color: #f5c518; color: #121212; font-weight: bold; border: none; }
+        .btn-yellow:hover { background-color: #e5b610; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top shadow mb-5">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fa-solid fa-film me-2"></i>KINOMAN</a>
+        <a class="nav-link" href="/">Powrót do bazy</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card auth-card mt-4 mb-5">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fa-solid fa-user-plus fa-4x text-muted mb-3"></i>
+                        <h2 class="fw-bold">Dołącz do Kinomana</h2>
+                        <p class="text-muted small">Stwórz darmowe konto</p>
+                    </div>
+
+                    <form th:action="@{/register}" th:object="${user}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Nazwa użytkownika</label>
+                            <input type="text" th:field="*{username}" class="form-control form-control-lg" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Adres Email</label>
+                            <input type="email" th:field="*{email}" class="form-control form-control-lg" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-muted">Hasło</label>
+                            <input type="password" th:field="*{password}" class="form-control form-control-lg" required>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input type="checkbox" th:field="*{publicProfile}" class="form-check-input" id="checkPub">
+                            <label class="form-check-label text-muted small" for="checkPub">Profil publiczny (inni zobaczą moje oceny)</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-yellow w-100 py-3">Zarejestruj się</button>
+                    </form>
+
+                    <div class="text-center mt-4 pt-3 border-top">
+                        <p class="small text-muted mb-0">Masz już konto?</p>
+                        <a href="/login" class="text-decoration-none fw-bold" style="color: #f5c518;">Zaloguj się</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

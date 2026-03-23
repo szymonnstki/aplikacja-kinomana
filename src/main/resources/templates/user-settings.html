@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Ustawienia Profilu - Kinoman</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root { --fw-yellow: #f5c518; --fw-dark: #121212; }
+        body { font-family: 'Montserrat', sans-serif; background-color: #f8f9fa; }
+        .navbar { background-color: var(--fw-dark); padding: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .navbar-brand { color: var(--fw-yellow) !important; font-weight: 800; font-size: 1.8rem; }
+        .nav-link { color: white !important; font-weight: 500; transition: color 0.2s; }
+        .nav-link:hover { color: var(--fw-yellow) !important; }
+        .btn-yellow { background-color: var(--fw-yellow); color: var(--fw-dark); font-weight: 700; border: none; }
+        .btn-yellow:hover { background-color: #e5b610; }
+        .form-card { border-top: 5px solid var(--fw-yellow); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top mb-5">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fa-solid fa-film me-2"></i>KINOMAN</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-4">
+                <li class="nav-item"><a class="nav-link" href="/">Baza filmów</a></li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <div th:if="${user != null}" class="d-flex align-items-center">
+                    <span class="text-white me-3">Witaj, <strong style="color: var(--fw-yellow);" th:text="${user.name}">User</strong>!</span>
+                    <a th:href="@{/user/{username}(username=${user.name})}" class="btn btn-outline-info btn-sm me-3">
+                        <i class="fa-solid fa-circle-user me-1"></i>Mój Profil
+                    </a>
+                    <form th:action="@{/logout}" method="post" class="m-0">
+                        <button type="submit" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>Wyloguj</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+
+            <div class="card form-card">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fa-solid fa-gear fa-3x text-muted mb-3"></i>
+                        <h2 class="fw-bold">Ustawienia prywatności</h2>
+                        <p class="text-muted small">Zarządzaj widocznością swojego profilu</p>
+                    </div>
+
+                    <form th:action="@{/user/settings}" method="post">
+
+                        <div class="alert alert-light border mb-4">
+                            <strong><i class="fa-solid fa-circle-info me-2 text-info"></i>Twój obecny status:</strong><br>
+                            <span th:if="${profileUser.publicProfile}" class="text-success fw-bold">Profil Publiczny (Widoczny dla wszystkich)</span>
+                            <span th:if="${!profileUser.publicProfile}" class="text-danger fw-bold">Profil Prywatny (Ukryty)</span>
+                        </div>
+
+                        <div class="form-check form-switch mb-4 fs-5">
+                            <input class="form-check-input" type="checkbox" name="publicProfile" id="publicProfileSwitch" th:checked="${profileUser.publicProfile}">
+                            <label class="form-check-label text-dark" for="publicProfileSwitch">
+                                Uczyń mój profil publicznym
+                            </label>
+                            <div class="form-text fs-6 mt-2">Jeśli ta opcja jest zaznaczona, inni Kinomaniacy będą mogli zobaczyć Twoją Watchlistę oraz wystawione przez Ciebie oceny.</div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-5">
+                            <button type="submit" class="btn btn-yellow btn-lg fw-bold"><i class="fa-solid fa-floppy-disk me-2"></i>Zapisz zmiany</button>
+                            <a th:href="@{/user/{username}(username=${profileUser.username})}" class="btn btn-light border fw-bold text-muted mt-2">Anuluj</a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
