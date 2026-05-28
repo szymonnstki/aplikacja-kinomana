@@ -2,10 +2,23 @@ package pl.kinoman.kinoman.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+
 public class TmdbMovieDto {
     private Long id;
     private String title;
     private String overview;
+
+    @JsonProperty("genre_ids")
+    private List<Integer> genreIds;
+
+    public List<Integer> getGenreIds() {
+        return genreIds;
+    }
+
+    public void setGenreIds(List<Integer> genreIds) {
+        this.genreIds = genreIds;
+    }
 
     @JsonProperty("release_date")
     private String releaseDate;

@@ -8,6 +8,7 @@ import pl.kinoman.kinoman.dto.TmdbMovieDto;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TmdbService {
@@ -37,4 +38,55 @@ public class TmdbService {
             return null; // Jeśli filmu nie ma w TMDB, zwracamy null
         }
     }
+
+    public String getDirector(Long movieId) {
+
+        String url = String.format("%s/movie/%d/credits?api_key=%s&language=pl-PL",
+                baseUrl, movieId, apiKey);
+
+        try {
+            Map response = restTemplate.getForObject(url, Map.class);
+
+            if (response != null && response.get("crew") != null) {
+
+                List<Map<String, Object>> crew =
+                        (List<Map<String, Object>>) response.get("crew");
+
+                for (Map<String, Object> person : crew) {
+                    if ("Director".equals(person.get("job"))) {
+                        return (String) person.get("name");
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            return "Nieznany";
+        }
+
+        return "Nieznany";
+    }
+
+    public List<TmdbMovieDto> discoverMovies(String genreId, Integer year, String sortBy) {
+        StringBuilder url = new StringBuilder(
+                baseUrl + "/discover/movie?api_key=" + apiKey + "&language=pl-PL"
+        );
+
+        if (genreId != null && !genreId.isEmpty()) {
+            url.append("&with_genres=").append(genreId);
+        }
+
+        if (year != null) {
+            url.append("&primary_release_year=").append(year);
+        }
+
+        if (sortBy != null && !sortBy.isEmpty()) {
+            url.append("&sort_by=").append(sortBy);
+        } else {
+            url.append("&sort_by=popularity.desc");
+        }
+
+        TmdbResponse response = restTemplate.getForObject(url.toString(), TmdbResponse.class);
+        return response != null ? response.getResults() : Collections.emptyList();
+    }
+
 }

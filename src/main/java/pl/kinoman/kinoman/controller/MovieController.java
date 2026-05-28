@@ -23,35 +23,83 @@ public class MovieController {
     @Autowired private TmdbService tmdbService;
 
     @GetMapping("/")
-    public String index(@RequestParam(name = "search", required = false) String search, Model model, Principal principal) {
-        if (search != null && !search.isEmpty()) {
-            // SZUKAMY W TMDB ZAMIAST W LOKALNEJ BAZIE
-            List<TmdbMovieDto> tmdbResults = tmdbService.searchMoviesOnTmdb(search);
+    public String index(
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "genre", required = false) String genre,
+            @RequestParam(name = "year", required = false) Integer year,
+            @RequestParam(name = "sort", required = false) String sort,
+            Model model,
+            Principal principal
+    ) {
+        List<TmdbMovieDto> tmdbResults;
 
-            // Konwertujemy wyniki z TMDB na nasze obiekty Movie
-            List<Movie> movies = tmdbResults.stream().map(dto -> {
-                Movie m = new Movie();
-                // UWAGA: przypisujemy ID z TMDB do naszego filmu na czas wyświetlania!
-                m.setId(dto.getId());
-                m.setTitle(dto.getTitle());
-                m.setDescription(dto.getOverview());
-                m.setGenre("Film z TMDB");
-                if(dto.getReleaseDate() != null && dto.getReleaseDate().length() >= 4) {
-                    m.setReleaseYear(Integer.parseInt(dto.getReleaseDate().substring(0, 4)));
-                }
-                if (dto.getPosterPath() != null) {
-                    m.setImageUrl("https://image.tmdb.org/t/p/w500" + dto.getPosterPath());
-                }
-                return m;
-            }).toList();
+        boolean hasSearch = search != null && !search.trim().isEmpty();
 
-            model.addAttribute("movies", movies);
-            model.addAttribute("searchQuery", search);
+        if (hasSearch) {
+            tmdbResults = tmdbService.searchMoviesOnTmdb(search.trim());
+
+            // FILTR ROKU
+            if (year != null) {
+                tmdbResults = tmdbResults.stream()
+                        .filter(movie -> movie.getReleaseDate() != null
+                                && movie.getReleaseDate().startsWith(year.toString()))
+                        .toList();
+            }
+
+            // FILTR GATUNKU
+            if (genre != null && !genre.isEmpty()) {
+                Integer genreId = Integer.parseInt(genre);
+
+                tmdbResults = tmdbResults.stream()
+                        .filter(movie -> movie.getGenreIds() != null
+                                && movie.getGenreIds().contains(genreId))
+                        .toList();
+            }
+
+            // SORTOWANIE LOKALNE
+            if ("release_date.desc".equals(sort)) {
+                tmdbResults = tmdbResults.stream()
+                        .sorted((a, b) -> String.valueOf(b.getReleaseDate())
+                                .compareTo(String.valueOf(a.getReleaseDate())))
+                        .toList();
+            } else if ("release_date.asc".equals(sort)) {
+                tmdbResults = tmdbResults.stream()
+                        .sorted((a, b) -> String.valueOf(a.getReleaseDate())
+                                .compareTo(String.valueOf(b.getReleaseDate())))
+                        .toList();
+            }
+
         } else {
-            model.addAttribute("movies", movieService.getAllMovies());
+            tmdbResults = tmdbService.discoverMovies(genre, year, sort);
         }
 
+        List<Movie> movies = tmdbResults.stream().map(dto -> {
+            Movie m = new Movie();
+
+            m.setId(dto.getId());
+            m.setTitle(dto.getTitle());
+            m.setDescription(dto.getOverview());
+            m.setGenre("Film z TMDB");
+            m.setDirector(tmdbService.getDirector(dto.getId()));
+
+            if (dto.getReleaseDate() != null && dto.getReleaseDate().length() >= 4) {
+                m.setReleaseYear(Integer.parseInt(dto.getReleaseDate().substring(0, 4)));
+            }
+
+            if (dto.getPosterPath() != null) {
+                m.setImageUrl("https://image.tmdb.org/t/p/w500" + dto.getPosterPath());
+            }
+
+            return m;
+        }).toList();
+
+        model.addAttribute("movies", movies);
+        model.addAttribute("searchQuery", search);
+        model.addAttribute("selectedGenre", genre);
+        model.addAttribute("selectedYear", year);
+        model.addAttribute("selectedSort", sort);
         model.addAttribute("user", principal);
+
         return "index";
     }
 
@@ -69,7 +117,8 @@ public class MovieController {
                 movie.setTitle(dto.getTitle());
                 movie.setDescription(dto.getOverview());
                 movie.setGenre("Film z TMDB");
-                movie.setDirector("Nieznany (TMDB API)");
+                movie.setDirector(tmdbService.getDirector(id));
+
                 if(dto.getReleaseDate() != null && dto.getReleaseDate().length() >= 4) {
                     movie.setReleaseYear(Integer.parseInt(dto.getReleaseDate().substring(0, 4)));
                 }
@@ -98,18 +147,38 @@ public class MovieController {
         return "movie-details";
     }
 
-    @PostMapping("/movies/details/{id}/rate")
-    public String addRating(@PathVariable Long id, @RequestParam int stars, @RequestParam String comment, Principal principal) {
+    @PostMapping("/movies/details/rate/add/{id}")
+    public String addOrUpdateRating(@PathVariable Long id,
+                                    @RequestParam int stars,
+                                    @RequestParam String comment,
+                                    Principal principal) {
+
         Movie movie = movieService.getMovieById(id);
         User user = userService.findByUsername(principal.getName());
+
         if (movie != null && user != null) {
+
             Rating rating = new Rating();
             rating.setMovie(movie);
             rating.setUser(user);
             rating.setStars(stars);
             rating.setComment(comment);
-            ratingService.saveRating(rating);
+
+            ratingService.saveOrUpdateRating(rating);
         }
+
         return "redirect:/movies/details/" + id;
+    }
+
+    @PostMapping("/movies/details/rate/delete/{id}")
+    public String deleteRating(@PathVariable Long id,
+                               @RequestParam Long movieId,
+                               Principal principal) {
+
+        if (principal != null) {
+            ratingService.deleteRating(id, principal.getName());
+        }
+
+        return "redirect:/movies/details/" + movieId;
     }
 }

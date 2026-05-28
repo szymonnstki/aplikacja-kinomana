@@ -8,20 +8,118 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        :root { --fw-yellow: #f5c518; --fw-dark: #121212; }
-        body { font-family: 'Montserrat', sans-serif; background-color: #f8f9fa; }
-        .navbar { background-color: var(--fw-dark); padding: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .navbar-brand { color: var(--fw-yellow) !important; font-weight: 800; font-size: 1.8rem; letter-spacing: 1px; }
-        .nav-link { color: #fff !important; font-weight: 500; transition: color 0.2s; }
-        .nav-link:hover { color: var(--fw-yellow) !important; }
-        .btn-yellow { background-color: var(--fw-yellow); color: var(--fw-dark); font-weight: 700; border: none; }
-        .btn-yellow:hover { background-color: #e5b610; transform: translateY(-2px); color: var(--fw-dark); }
-        .movie-header { background-color: #242424; color: white; padding: 4rem 0; border-bottom: 5px solid var(--fw-yellow); }
-        .star-color { color: var(--fw-yellow); }
-        .review-card { border-left: 4px solid var(--fw-yellow); background: white; margin-bottom: 1rem; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-radius: 0 8px 8px 0; }
+
+        :root {
+            --fw-yellow: #f5c518;
+            --fw-dark: #121212;
+            --fw-gray: #242424;
+            --fw-text: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f8f9fa;
+
+            /* żeby footer nie zasłaniał treści */
+            padding-bottom: 140px;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background-color: var(--fw-dark);
+            padding: 1rem 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            color: var(--fw-yellow) !important;
+            font-weight: 800;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+
+        .nav-link {
+            color: #fff !important;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--fw-yellow) !important;
+        }
+
+        /* BUTTON */
+        .btn-yellow {
+            background-color: var(--fw-yellow);
+            color: var(--fw-dark);
+            font-weight: 700;
+            border: none;
+        }
+
+        .btn-yellow:hover {
+            background-color: #e5b610;
+            transform: translateY(-2px);
+            color: var(--fw-dark);
+        }
+
+        /* HEADER */
+        .movie-header {
+            background-color: #242424;
+            color: white;
+            padding: 4rem 0;
+            border-bottom: 5px solid var(--fw-yellow);
+        }
+
+        .star-color {
+            color: var(--fw-yellow);
+        }
+
+        /* REVIEW */
+        .review-card {
+            border-left: 4px solid var(--fw-yellow);
+            background: white;
+            margin-bottom: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* FOOTER */
+        .footer {
+            background-color: var(--fw-dark);
+            color: var(--fw-text);
+
+            padding: 1rem 0;
+
+            position: fixed;
+            bottom: 0;
+            left: 0;
+
+            width: 100%;
+
+            z-index: 1000;
+
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+        }
+
     </style>
 </head>
 <body>
+
+<!-- ALERT -->
+<div th:if="${param.error != null and param.error[0] == 'add_review_first'}"
+     class="alert alert-warning text-center rounded-0 mb-0 fw-bold">
+
+    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+
+    Aby oznaczyć film jako obejrzany,
+    musisz najpierw dodać opinię i ocenę.
+
+</div>
 
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
@@ -115,7 +213,7 @@
                         <p class="text-muted small">Tylko zarejestrowani Kinomaniacy mogą dodawać recenzje.</p>
                         <a href="/login" class="btn btn-warning w-100 mt-3 fw-bold">Przejdź do logowania</a>
                     </div>
-                    <form th:if="${user != null}" th:action="@{/movies/details/{id}/rate(id=${movie.id})}" method="post">
+                    <form th:if="${user != null}" th:action="@{/movies/details/rate/add/{id}(id=${movie.id})}" method="post">
                         <div class="mb-3">
                             <label class="form-label text-muted small fw-bold">Twoja ocena (1-10)</label>
                             <input type="number" name="stars" class="form-control form-control-lg" min="1" max="10" required>
@@ -132,24 +230,64 @@
 
         <div class="col-md-8">
             <h3 class="mb-4 fw-bold border-bottom pb-2">Recenzje Użytkowników</h3>
+
             <div th:if="${#lists.isEmpty(ratings)}" class="alert alert-light border text-center py-5">
                 <i class="fa-regular fa-comments fa-3x text-muted mb-3"></i>
                 <h5 class="text-muted">Ten film nie ma jeszcze żadnych recenzji.</h5>
                 <p class="mb-0">Bądź pierwszy!</p>
             </div>
+
             <div class="review-card" th:each="r : ${ratings}">
+
+                <!-- USER + OCENA -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <strong class="text-dark fs-5">
                         <i class="fa-solid fa-circle-user text-muted me-2"></i>
-                        <a th:href="@{/user/{username}(username=${r.user.username})}" class="text-decoration-none text-dark" th:text="${r.user.username}">User</a>
+
+                        <a th:href="@{/user/{username}(username=${r.user.username})}"
+                           class="text-decoration-none text-dark"
+                           th:text="${r.user.username}">
+                            User
+                        </a>
                     </strong>
-                    <span class="badge bg-dark star-color fs-6 px-3 py-2"><i class="fa-solid fa-star me-1"></i><span th:text="${r.stars}">10</span> / 10</span>
+
+                    <span class="badge bg-dark star-color fs-6 px-3 py-2">
+            <i class="fa-solid fa-star me-1"></i>
+            <span th:text="${r.stars}">10</span> / 10
+        </span>
                 </div>
-                <p class="mb-0 text-muted" th:text="${r.comment}">Komentarz</p>
+
+                <!-- KOMENTARZ -->
+                <p class="mb-2 text-muted" th:text="${r.comment}">
+                    Komentarz
+                </p>
+
+                <!-- 🔥 USUWANIE (TYLKO WŁAŚCICIEL) -->
+                <div th:if="${user != null and user.name == r.user.username}">
+                    <form th:action="@{/movies/details/rate/delete/{id}(id=${r.id})}"
+                          method="post"
+                          class="d-inline"
+                          onsubmit="return confirm('Czy na pewno chcesz usunąć tę opinię?');">
+
+                        <input type="hidden" name="movieId" th:value="${movie.id}">
+
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="fa-solid fa-trash me-1"></i> Usuń
+                        </button>
+
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<footer class="footer text-center">
+    <div class="container">
+        <h4 class="mb-3" style="color: var(--fw-yellow); font-weight: 800;">KINOMAN</h4>
+        <p class="small text-white mb-0">&copy; 2026 Stworzone przez Artura, Szymona i Dawida. Wszystkie prawa zastrzeżone.</p>
+    </div>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

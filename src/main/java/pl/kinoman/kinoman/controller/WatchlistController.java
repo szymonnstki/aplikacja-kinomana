@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import pl.kinoman.kinoman.model.Movie;
 import pl.kinoman.kinoman.model.User;
 import pl.kinoman.kinoman.service.MovieService;
+import pl.kinoman.kinoman.service.RatingService;
 import pl.kinoman.kinoman.service.UserService;
 import pl.kinoman.kinoman.service.WatchlistService;
 
@@ -18,16 +19,33 @@ public class WatchlistController {
     @Autowired private WatchlistService watchlistService;
     @Autowired private UserService userService;
     @Autowired private MovieService movieService;
+    @Autowired private RatingService ratingService;
 
     @PostMapping("/watchlist/add")
-    public String addOrUpdate(@RequestParam Long movieId, @RequestParam String status, Principal principal) {
+    public String addOrUpdate(@RequestParam Long movieId,
+                              @RequestParam String status,
+                              Principal principal) {
+
         if (principal != null) {
             User user = userService.findByUsername(principal.getName());
             Movie movie = movieService.getMovieById(movieId);
+
             if (user != null && movie != null) {
+
+                if ("WATCHED".equals(status)) {
+                    boolean hasRating =
+                            ratingService.userHasRating(user.getUsername(), movieId);
+
+                    if (!hasRating) {
+                        return "redirect:/movies/details/" + movieId
+                                + "?error=add_review_first";
+                    }
+                }
+
                 watchlistService.addToWatchlist(user, movie, status);
             }
         }
+
         return "redirect:/movies/details/" + movieId;
     }
 
@@ -36,6 +54,7 @@ public class WatchlistController {
         if (principal != null) {
             watchlistService.removeFromWatchlist(principal.getName(), movieId);
         }
+
         return "redirect:/movies/details/" + movieId;
     }
 }
