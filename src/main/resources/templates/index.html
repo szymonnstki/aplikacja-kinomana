@@ -300,11 +300,6 @@
                                 Popularność ↓
                             </option>
 
-                            <option value="vote_average.desc"
-                                    th:selected="${selectedSort == 'vote_average.desc'}">
-                                Ocena ↓
-                            </option>
-
                             <option value="release_date.desc"
                                     th:selected="${selectedSort == 'release_date.desc'}">
                                 Najnowsze
@@ -340,10 +335,27 @@
 </div>
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold" style="border-left: 5px solid var(--fw-yellow); padding-left: 15px;"
-            th:text="${searchQuery != null && !searchQuery.isEmpty()} ? 'Wyniki wyszukiwania' : 'Popularne'">
+
+        <h2 class="fw-bold mb-0"
+            style="border-left: 5px solid var(--fw-yellow); padding-left: 15px;"
+            th:text="${isSearching} ? 'Wyniki wyszukiwania' : (${activeTab == 'rated'} ? 'Ocenione' : 'Popularne')">
             Popularne
         </h2>
+
+        <div class="d-flex gap-3 align-items-center">
+            <a th:href="@{/(tab='popular')}"
+               class="btn"
+               th:classappend="${!isSearching and activeTab == 'popular'} ? 'btn-yellow' : 'btn-outline-secondary'">
+                Popularne
+            </a>
+
+            <a th:href="@{/(tab='rated')}"
+               class="btn"
+               th:classappend="${!isSearching and activeTab == 'rated'} ? 'btn-yellow' : 'btn-outline-secondary'">
+                Ocenione
+            </a>
+        </div>
+
     </div>
 
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
@@ -378,12 +390,15 @@
 
         <div class="col-12 text-center py-5" th:if="${#lists.isEmpty(movies)}">
             <i class="fa-solid fa-box-open fa-4x text-muted mb-3"></i>
-            <h4 class="text-muted fw-bold">
-                Brak wyników wyszukiwania
+            <h4 class="text-muted fw-bold"
+                th:text="${activeTab == 'rated'} ? 'Brak ocenionych filmów' : 'Brak wyników wyszukiwania'">
+                Brak wyników
             </h4>
 
-            <p class="text-muted mb-0">
-                Spróbuj zmienić tytuł wyszukiwania lub ustawione filtry
+            <p class="text-muted mb-0"
+               th:text="${activeTab == 'rated'}
+      ? 'Żaden film nie został jeszcze oceniony.'
+      : 'Spróbuj zmienić tytuł wyszukiwania lub ustawione filtry'">
             </p>
         </div>
     </div>

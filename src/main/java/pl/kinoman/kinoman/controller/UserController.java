@@ -7,13 +7,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import pl.kinoman.kinoman.model.Rating;
 import pl.kinoman.kinoman.model.User;
+import pl.kinoman.kinoman.model.Watchlist;
 import pl.kinoman.kinoman.service.UserService;
 import pl.kinoman.kinoman.service.RatingService;
 import pl.kinoman.kinoman.service.WatchlistService;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.security.Principal;
+import java.util.List;
 
 @Controller
 public class UserController {
@@ -48,17 +51,31 @@ public class UserController {
         }
 
         boolean isOwner = principal != null && principal.getName().equals(username);
+
         model.addAttribute("profileUser", user);
         model.addAttribute("isOwner", isOwner);
-        model.addAttribute("user", principal); // Dodajemy do poprawnego działania paska nawigacji
+        model.addAttribute("user", principal);
 
         if (!user.isPublicProfile() && !isOwner) {
             model.addAttribute("isPrivate", true);
         } else {
             model.addAttribute("isPrivate", false);
-            model.addAttribute("userRatings", ratingService.getRatingsByUser(username));
-            // DODANE: Przekazujemy watchlistę użytkownika
-            model.addAttribute("watchlist", watchlistService.getUserWatchlist(username));
+
+            List<Rating> userRatings = ratingService.getRatingsByUser(username);
+            List<Watchlist> watchlist = watchlistService.getUserWatchlist(username);
+
+            long toWatchCount = watchlist.stream()
+                    .filter(w -> "TO_WATCH".equals(w.getStatus()))
+                    .count();
+
+            long watchedCount = watchlist.stream()
+                    .filter(w -> "WATCHED".equals(w.getStatus()))
+                    .count();
+
+            model.addAttribute("userRatings", userRatings);
+            model.addAttribute("watchlist", watchlist);
+            model.addAttribute("toWatchCount", toWatchCount);
+            model.addAttribute("watchedCount", watchedCount);
         }
 
         return "user-profile";

@@ -28,121 +28,179 @@ public class MovieController {
             @RequestParam(name = "genre", required = false) String genre,
             @RequestParam(name = "year", required = false) Integer year,
             @RequestParam(name = "sort", required = false) String sort,
+            @RequestParam(name = "tab", required = false, defaultValue = "popular") String tab,
             Model model,
             Principal principal
     ) {
-        List<TmdbMovieDto> tmdbResults;
+        List<Movie> movies;
 
         boolean hasSearch = search != null && !search.trim().isEmpty();
 
-        if (hasSearch) {
-            tmdbResults = tmdbService.searchMoviesOnTmdb(search.trim());
+        boolean hasFilters = hasSearch
+                || genre != null && !genre.isEmpty()
+                || year != null
+                || sort != null && !sort.isEmpty();
 
-            // FILTR ROKU
-            if (year != null) {
-                tmdbResults = tmdbResults.stream()
-                        .filter(movie -> movie.getReleaseDate() != null
-                                && movie.getReleaseDate().startsWith(year.toString()))
-                        .toList();
-            }
+        if ("rated".equals(tab) && !hasFilters) {
 
-            // FILTR GATUNKU
-            if (genre != null && !genre.isEmpty()) {
-                Integer genreId = Integer.parseInt(genre);
-
-                tmdbResults = tmdbResults.stream()
-                        .filter(movie -> movie.getGenreIds() != null
-                                && movie.getGenreIds().contains(genreId))
-                        .toList();
-            }
-
-            // SORTOWANIE LOKALNE
-            if ("release_date.desc".equals(sort)) {
-                tmdbResults = tmdbResults.stream()
-                        .sorted((a, b) -> String.valueOf(b.getReleaseDate())
-                                .compareTo(String.valueOf(a.getReleaseDate())))
-                        .toList();
-            } else if ("release_date.asc".equals(sort)) {
-                tmdbResults = tmdbResults.stream()
-                        .sorted((a, b) -> String.valueOf(a.getReleaseDate())
-                                .compareTo(String.valueOf(b.getReleaseDate())))
-                        .toList();
-            }
+            movies = movieService.findMoviesOrderByLocalRating();
 
         } else {
-            tmdbResults = tmdbService.discoverMovies(genre, year, sort);
+            List<TmdbMovieDto> tmdbResults;
+
+            if (hasSearch) {
+                tmdbResults = tmdbService.searchMoviesOnTmdb(search.trim());
+
+                if (year != null) {
+                    tmdbResults = tmdbResults.stream()
+                            .filter(movie -> movie.getReleaseDate() != null
+                                    && movie.getReleaseDate().startsWith(year.toString()))
+                            .toList();
+                }
+
+                if (genre != null && !genre.isEmpty()) {
+                    Integer genreId = Integer.parseInt(genre);
+
+                    tmdbResults = tmdbResults.stream()
+                            .filter(movie -> movie.getGenreIds() != null
+                                    && movie.getGenreIds().contains(genreId))
+                            .toList();
+                }
+
+                if ("release_date.desc".equals(sort)) {
+                    tmdbResults = tmdbResults.stream()
+                            .sorted((a, b) -> String.valueOf(b.getReleaseDate())
+                                    .compareTo(String.valueOf(a.getReleaseDate())))
+                            .toList();
+                } else if ("release_date.asc".equals(sort)) {
+                    tmdbResults = tmdbResults.stream()
+                            .sorted((a, b) -> String.valueOf(a.getReleaseDate())
+                                    .compareTo(String.valueOf(b.getReleaseDate())))
+                            .toList();
+                }
+
+            } else {
+                tmdbResults = tmdbService.discoverMovies(genre, year, sort);
+            }
+
+            movies = tmdbResults.stream().map(dto -> {
+                Movie m = new Movie();
+
+                m.setId(dto.getId());
+                m.setTitle(dto.getTitle());
+                m.setDescription(dto.getOverview());
+                m.setGenre("Film z TMDB");
+                m.setDirector(tmdbService.getDirector(dto.getId()));
+
+                if (dto.getReleaseDate() != null && dto.getReleaseDate().length() >= 4) {
+                    m.setReleaseYear(Integer.parseInt(dto.getReleaseDate().substring(0, 4)));
+                }
+
+                if (dto.getPosterPath() != null) {
+                    m.setImageUrl("https://image.tmdb.org/t/p/w500" + dto.getPosterPath());
+                }
+
+                Movie localMovie = movieService.getMovieById(dto.getId());
+
+                if (localMovie != null) {
+                    m.setRatings(localMovie.getRatings());
+                }
+
+                return m;
+            }).toList();
         }
-
-        List<Movie> movies = tmdbResults.stream().map(dto -> {
-            Movie m = new Movie();
-
-            m.setId(dto.getId());
-            m.setTitle(dto.getTitle());
-            m.setDescription(dto.getOverview());
-            m.setGenre("Film z TMDB");
-            m.setDirector(tmdbService.getDirector(dto.getId()));
-
-            if (dto.getReleaseDate() != null && dto.getReleaseDate().length() >= 4) {
-                m.setReleaseYear(Integer.parseInt(dto.getReleaseDate().substring(0, 4)));
-            }
-
-            if (dto.getPosterPath() != null) {
-                m.setImageUrl("https://image.tmdb.org/t/p/w500" + dto.getPosterPath());
-            }
-
-            return m;
-        }).toList();
 
         model.addAttribute("movies", movies);
         model.addAttribute("searchQuery", search);
         model.addAttribute("selectedGenre", genre);
         model.addAttribute("selectedYear", year);
         model.addAttribute("selectedSort", sort);
+        model.addAttribute("activeTab", tab);
+        model.addAttribute("isSearching", hasFilters);
         model.addAttribute("user", principal);
 
         return "index";
     }
 
     @GetMapping("/movies/details/{id}")
-    public String movieDetails(@PathVariable Long id, Model model, Principal principal) {
-        // 1. Szukamy filmu w naszej lokalnej bazie MySQL
+    public String movieDetails(@PathVariable Long id,
+                               Model model,
+                               Principal principal) {
+
+        // Szukamy filmu w lokalnej bazie
         Movie movie = movieService.getMovieById(id);
 
-        // 2. Jeśli filmu NIE MA w bazie, pobieramy go z TMDB i zapisujemy u siebie
+        // Jeśli nie ma go w bazie, pobieramy z TMDB
         if (movie == null) {
+
             TmdbMovieDto dto = tmdbService.getMovieDetails(id);
-            if (dto != null) {
-                movie = new Movie();
-                movie.setId(dto.getId()); // Ustawiamy ID z TMDB
-                movie.setTitle(dto.getTitle());
-                movie.setDescription(dto.getOverview());
-                movie.setGenre("Film z TMDB");
-                movie.setDirector(tmdbService.getDirector(id));
 
-                if(dto.getReleaseDate() != null && dto.getReleaseDate().length() >= 4) {
-                    movie.setReleaseYear(Integer.parseInt(dto.getReleaseDate().substring(0, 4)));
-                }
-                if (dto.getPosterPath() != null) {
-                    movie.setImageUrl("https://image.tmdb.org/t/p/w500" + dto.getPosterPath());
-                }
-
-                // ZAPISUJEMY W BAZIE - teraz film ma swoje ID w MySQL i można go oceniać!
-                movieService.addMovie(movie);
-            } else {
-                return "redirect:/"; // Jeśli filmu nie ma nawet w TMDB, wracamy na główną
+            if (dto == null) {
+                return "redirect:/";
             }
+
+            movie = new Movie();
+
+            movie.setId(dto.getId());
+            movie.setTitle(dto.getTitle());
+            movie.setDescription(dto.getOverview());
+            movie.setDirector(tmdbService.getDirector(id));
+
+            if (dto.getReleaseDate() != null
+                    && dto.getReleaseDate().length() >= 4) {
+
+                movie.setReleaseYear(
+                        Integer.parseInt(
+                                dto.getReleaseDate().substring(0, 4)
+                        )
+                );
+            }
+
+            if (dto.getPosterPath() != null) {
+                movie.setImageUrl(
+                        "https://image.tmdb.org/t/p/w500"
+                                + dto.getPosterPath()
+                );
+            }
+
+            movie.setGenre("TMDB");
+
+            movieService.addMovie(movie);
         }
 
-        // 3. Reszta pozostaje bez zmian - wyświetlamy stronę
+        // Film
         model.addAttribute("movie", movie);
-        model.addAttribute("ratings", ratingService.getRatingsForMovie(id));
+
+        // Recenzje
+        model.addAttribute(
+                "ratings",
+                ratingService.getRatingsForMovie(id)
+        );
+
+        // Aktualny użytkownik
         model.addAttribute("user", principal);
 
+        // Status watchlisty
         String watchlistStatus = null;
+
         if (principal != null) {
-            watchlistStatus = watchlistService.getMovieStatusForUser(principal.getName(), id);
+            watchlistStatus =
+                    watchlistService.getMovieStatusForUser(
+                            principal.getName(),
+                            id
+                    );
         }
-        model.addAttribute("watchlistStatus", watchlistStatus);
+
+        model.addAttribute(
+                "watchlistStatus",
+                watchlistStatus
+        );
+
+        // PODOBNE FILMY Z TMDB
+        model.addAttribute(
+                "similarMovies",
+                tmdbService.getSimilarMovies(id)
+        );
 
         return "movie-details";
     }

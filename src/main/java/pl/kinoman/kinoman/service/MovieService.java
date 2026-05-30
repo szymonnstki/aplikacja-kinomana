@@ -32,4 +32,11 @@ public class MovieService {
         }
         return movieRepository.findByTitleContainingIgnoreCaseOrGenreContainingIgnoreCase(keyword, keyword);
     }
+
+    // Lista ocenionych filmów w lokalnej bazie
+    public List<Movie> findMoviesOrderByLocalRating() {
+        return movieRepository.findMoviesOrderByLocalRating();
+    }
+
+
 }

@@ -62,4 +62,6 @@ public class RatingService {
     public boolean userHasRating(String username, Long movieId) {
         return ratingRepository.existsByUserUsernameAndMovieId(username, movieId);
     }
+
+
 }

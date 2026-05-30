@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import pl.kinoman.kinoman.dto.TmdbResponse;
 import pl.kinoman.kinoman.dto.TmdbMovieDto;
+import pl.kinoman.kinoman.model.Movie;
 
 import java.util.Collections;
 import java.util.List;
@@ -88,5 +89,52 @@ public class TmdbService {
         TmdbResponse response = restTemplate.getForObject(url.toString(), TmdbResponse.class);
         return response != null ? response.getResults() : Collections.emptyList();
     }
+
+    public List<Movie> getSimilarMovies(Long movieId) {
+        String url = "https://api.themoviedb.org/3/movie/"
+                + movieId
+                + "/similar?api_key="
+                + apiKey
+                + "&language=pl-PL&page=1";
+
+        TmdbResponse response = restTemplate.getForObject(
+                url,
+                TmdbResponse.class
+        );
+
+        if (response == null || response.getResults() == null) {
+            return List.of();
+        }
+
+        return response.getResults()
+                .stream()
+                .limit(8)
+                .map(dto -> {
+                    Movie movie = new Movie();
+
+                    movie.setId(dto.getId());
+                    movie.setTitle(dto.getTitle());
+                    movie.setDescription(dto.getOverview());
+                    movie.setGenre("Film z TMDB");
+                    movie.setDirector(getDirector(dto.getId()));
+
+                    if (dto.getReleaseDate() != null && dto.getReleaseDate().length() >= 4) {
+                        movie.setReleaseYear(
+                                Integer.parseInt(dto.getReleaseDate().substring(0, 4))
+                        );
+                    }
+
+                    if (dto.getPosterPath() != null) {
+                        movie.setImageUrl(
+                                "https://image.tmdb.org/t/p/w500" + dto.getPosterPath()
+                        );
+                    }
+
+                    return movie;
+                })
+                .toList();
+    }
+
+
 
 }
